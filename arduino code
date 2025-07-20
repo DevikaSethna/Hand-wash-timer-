@@ -1,0 +1,44 @@
+#include <Servo.h>
+
+const int trigPin = 9;
+const int echoPin = 10;
+const int servoPin = 7;
+const long washDuration = 20000; // 20 seconds
+
+Servo myservo;
+unsigned long startTime;
+bool timing = false;
+
+void setup() {
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  myservo.attach(servoPin);
+  myservo.write(0);
+}
+
+void loop() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duration = pulseIn(echoPin, HIGH);
+  long distance = duration * 0.034 / 2;
+
+  if (!timing && distance < 20) {  // threshold ~20cm
+    timing = true;
+    startTime = millis();
+  }
+
+  if (timing) {
+    unsigned long elapsed = millis() - startTime;
+    if (elapsed <= washDuration) {
+      int angle = map(elapsed, 0, washDuration, 0, 180);
+      myservo.write(angle);
+    } else {
+      myservo.write(180);  // show DONE
+      timing = false;
+    }
+  }
+}
